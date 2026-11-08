@@ -1,3 +1,4 @@
+import { VerificacionCampoObligatorio } from "../Verificaciones/VerificacionCampoObligatorio";
 import { randomUUID } from "node:crypto";
 import { Contacto } from "./Contacto";
 
@@ -129,15 +130,7 @@ export class Correo {
   }
 
   private validarCampoObligatorio(valor: unknown, nombreCampo: string): void {
-    if (valor === null || valor === undefined) {
-      throw new Error(`${nombreCampo} es obligatorio`);
-    }
-    if (typeof valor === "string" && valor.trim() === "") {
-      throw new Error(`${nombreCampo} es obligatorio`);
-    }
-    if (Array.isArray(valor) && valor.length === 0) {
-      throw new Error(`${nombreCampo} es obligatorio`);
-    }
+    new VerificacionCampoObligatorio(nombreCampo).verificar(valor);
   }
 
   public contieneTexto(texto: string): boolean {
