@@ -1,3 +1,4 @@
+import { VerificacionCampoObligatorio } from "../Verificaciones/VerificacionCampoObligatorio";
 import { Bandeja } from "./Bandeja";
 import { Correo } from "./Correo";
 
@@ -44,15 +45,7 @@ export class ClienteCorreo {
   }
 
   private validarCampoObligatorio(valor: unknown, nombreCampo: string): void {
-    if (valor === null || valor === undefined) {
-      throw new Error(`${nombreCampo} es obligatorio`);
-    }
-    if (typeof valor === "string" && valor.trim() === "") {
-      throw new Error(`${nombreCampo} es obligatorio`);
-    }
-    if (Array.isArray(valor) && valor.length === 0) {
-      throw new Error(`${nombreCampo} es obligatorio`);
-    }
+    new VerificacionCampoObligatorio(nombreCampo).verificar(valor);
   }
 
   public buscar(texto: string): Correo[] {
