@@ -1,3 +1,4 @@
+import { ErrorContacto } from "../Errores/ErrorContacto";
 import { VerificacionContactoCompleto } from "../Verificaciones/VerificacionContactoCompleto";
 import { Contacto } from "./Contacto";
 
@@ -13,7 +14,10 @@ export class Agenda {
     });
 
     if (this.buscarPorEmail(contacto.getEmail())) {
-      throw new Error("Ya existe un contacto con ese email");
+      throw new ErrorContacto({
+        name: "CONTACTO_DUPLICADO",
+        message: "Ya existe un contacto con ese email",
+      });
     }
     this._contactos.push(contacto);
   }
@@ -39,7 +43,10 @@ export class Agenda {
   ): void {
     const contacto = this.buscarPorEmail(email);
     if (!contacto) {
-      throw new Error("No existe un contacto con ese email");
+      throw new ErrorContacto({
+        name: "CONTACTO_DUPLICADO",
+        message: "Ya existe un contacto con ese email",
+      });
     }
 
     this._verificacionContacto.verificar({
