@@ -62,4 +62,48 @@ export class ClienteCorreo {
     ];
     return correos.filter((correo) => correo.contieneTexto(texto));
   }
+    private _papelera: Bandeja = new Bandeja();
+  private _origenes: Map<Correo, Bandeja> = new Map();
+
+  public getPapelera(): Bandeja {
+    return this._papelera;
+  }
+
+  public mover(correo: Correo, origen: Bandeja, destino: Bandeja): void {
+    if (!origen.contiene(correo)) {
+      throw new Error("El correo no está en la bandeja de origen");
+    }
+    if (origen === destino) {
+      throw new Error("La bandeja de origen y la de destino son la misma");
+    }
+    if (destino === this._papelera) {
+      this.eliminar(correo, origen);
+      return;
+    }
+    origen.quitarCorreo(correo);
+    destino.agregarCorreo(correo);
+  }
+
+  public eliminar(correo: Correo, origen: Bandeja): void {
+    if (!origen.contiene(correo)) {
+      throw new Error("El correo no está en esa bandeja");
+    }
+    origen.quitarCorreo(correo);
+    if (origen === this._papelera) {
+      this._origenes.delete(correo);
+      return;
+    }
+    this._origenes.set(correo, origen);
+    this._papelera.agregarCorreo(correo);
+  }
+
+  public restaurar(correo: Correo): void {
+    const origen = this._origenes.get(correo);
+    if (!this._papelera.contiene(correo) || !origen) {
+      throw new Error("El correo no está en la papelera");
+    }
+    this._papelera.quitarCorreo(correo);
+    origen.agregarCorreo(correo);
+    this._origenes.delete(correo);
+  }
 }
