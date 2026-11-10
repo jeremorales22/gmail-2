@@ -5,10 +5,7 @@ import { Contacto } from "../src/Clases/Contacto";
 import { Correo } from "../src/Clases/Correo";
 
 function crearContacto(nombre: string, email: string): Contacto {
-  const contacto = new Contacto();
-  contacto.setNombre(nombre);
-  contacto.setEmail(email);
-  return contacto;
+  return new Contacto(nombre, email);
 }
 
 function crearCorreo(asunto: string): Correo {

@@ -2,9 +2,9 @@ export class Contacto {
   private _email: string;
   private _nombre: string;
 
-  constructor() {
-    this._nombre = "";
-    this._email = "";
+  constructor(nombre: string = "", email: string = "") {
+    this._nombre = nombre;
+    this._email = email;
   }
 
   getEmail(): string {

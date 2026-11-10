@@ -14,10 +14,7 @@ import {
 import { RegistroFiltros } from "../src/Clases/RegistroFiltros";
 
 function crearContacto(nombre: string, email: string): Contacto {
-  const contacto = new Contacto();
-  contacto.setNombre(nombre);
-  contacto.setEmail(email);
-  return contacto;
+  return new Contacto(nombre, email);
 }
 
 const ana = crearContacto("Ana", "ana@gmail.com");
