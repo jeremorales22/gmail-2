@@ -38,7 +38,9 @@ describe("RQ-6", () => {
     const trabajo = new Bandeja();
     const correo = crearCorreo("Parcial");
 
-    expect(() => cliente.mover(correo, cliente.getEnviados(), trabajo)).toThrow();
+    expect(() => cliente.mover(correo, cliente.getEnviados(), trabajo)).toThrow(
+      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
+    );
     expect(trabajo.getCorreos()).toEqual([]);
   });
 
@@ -47,7 +49,9 @@ describe("RQ-6", () => {
     const correo = crearCorreo("Parcial");
     cliente.enviar(correo);
 
-    expect(() => cliente.mover(correo, cliente.getEnviados(), cliente.getEnviados())).toThrow();
+    expect(() =>
+      cliente.mover(correo, cliente.getEnviados(), cliente.getEnviados()),
+    ).toThrow(expect.objectContaining({ name: "BANDEJA_DESTINO_INVALIDA" }));
     expect(cliente.getEnviados().getCorreos()).toHaveLength(1);
   });
 
@@ -66,7 +70,9 @@ describe("RQ-6", () => {
     const cliente = new ClienteCorreo();
     const correo = crearCorreo("Parcial");
 
-    expect(() => cliente.eliminar(correo, cliente.getEnviados())).toThrow();
+    expect(() => cliente.eliminar(correo, cliente.getEnviados())).toThrow(
+      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
+    );
     expect(cliente.getPapelera().getCorreos()).toEqual([]);
   });
 
@@ -103,7 +109,9 @@ describe("RQ-6", () => {
     const correo = crearCorreo("Parcial");
     cliente.enviar(correo);
 
-    expect(() => cliente.restaurar(correo)).toThrow();
+    expect(() => cliente.restaurar(correo)).toThrow(
+      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
+    );
   });
 
   test("Eliminar un correo desde la Papelera lo borrará definitivamente.", () => {
@@ -116,6 +124,8 @@ describe("RQ-6", () => {
 
     expect(cliente.getPapelera().contiene(correo)).toBe(false);
     expect(cliente.getEnviados().contiene(correo)).toBe(false);
-    expect(() => cliente.restaurar(correo)).toThrow();
+    expect(() => cliente.restaurar(correo)).toThrow(
+      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
+    );
   });
 });

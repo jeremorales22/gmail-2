@@ -1,3 +1,4 @@
+import { ErrorFiltro } from "../Errores/ErrorFiltro";
 import { Correo } from "./Correo";
 
 // Un predicado recibe un correo y responde si cumple una condición
@@ -19,7 +20,8 @@ export function not(predicado: Predicado): Predicado {
 // Predicados de ejemplo
 export function deRemitente(email: string): Predicado {
   const buscado = email.toLowerCase();
-  return (correo) => correo.getRemitente()?.getEmail().toLowerCase() === buscado;
+  return (correo) =>
+    correo.getRemitente()?.getEmail().toLowerCase() === buscado;
 }
 
 export const noLeido: Predicado = (correo) => !correo.getLeido();
@@ -36,7 +38,10 @@ export class Filtro {
 
   constructor(nombre: string, predicado: Predicado) {
     if (!nombre || nombre.trim() === "") {
-      throw new Error("El filtro debe tener un nombre");
+      throw new ErrorFiltro({
+        name: "FILTRO_SIN_NOMBRE",
+        message: "El filtro debe tener un nombre",
+      });
     }
     this._nombre = nombre;
     this._predicado = predicado;

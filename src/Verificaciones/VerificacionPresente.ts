@@ -1,3 +1,4 @@
+import { ErrorCorreo } from "../Errores/ErrorCorreo";
 import { IVerificacion } from "./IVerificacion";
 
 export class VerificacionPresente implements IVerificacion<unknown> {
@@ -5,7 +6,10 @@ export class VerificacionPresente implements IVerificacion<unknown> {
 
   verificar(valor: unknown): void {
     if (valor === null || valor === undefined) {
-      throw new Error(`${this.nombreCampo} es obligatorio`);
+      throw new ErrorCorreo({
+        name: "CAMPO_OBLIGATORIO",
+        message: `${this.nombreCampo} es obligatorio`,
+      });
     }
   }
 }

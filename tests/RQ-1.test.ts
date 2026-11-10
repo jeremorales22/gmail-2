@@ -56,10 +56,18 @@ describe("RQ-1", () => {
   test("Se deberán validar los datos obligatorios cuando corresponda.", () => {
     const correo = new Correo();
 
-    expect(() => correo.setAsunto("")).toThrow();
-    expect(() => correo.setContenido("")).toThrow();
-    expect(() => correo.setRemitente(null as any)).toThrow();
-    expect(() => correo.setDestinatarios([])).toThrow();
+    expect(() => correo.setAsunto("")).toThrow(
+      expect.objectContaining({ name: "CAMPO_OBLIGATORIO" }),
+    );
+    expect(() => correo.setContenido("")).toThrow(
+      expect.objectContaining({ name: "CAMPO_OBLIGATORIO" }),
+    );
+    expect(() => correo.setRemitente(null as any)).toThrow(
+      expect.objectContaining({ name: "CAMPO_OBLIGATORIO" }),
+    );
+    expect(() => correo.setDestinatarios([])).toThrow(
+      expect.objectContaining({ name: "CAMPO_OBLIGATORIO" }),
+    );
   });
 
   test("Se deberá demostrar que los objetos creados mantienen correctamente su información.", () => {

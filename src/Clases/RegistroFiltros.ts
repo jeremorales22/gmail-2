@@ -1,3 +1,4 @@
+import { ErrorFiltro } from "../Errores/ErrorFiltro";
 import { Correo } from "./Correo";
 import { Filtro } from "./Filtros";
 
@@ -7,10 +8,16 @@ export class RegistroFiltros {
 
   public agregarFiltro(filtro: Filtro): void {
     if (this._filtros.length >= RegistroFiltros.MAXIMO) {
-      throw new Error("No se pueden registrar más de 5 filtros");
+      throw new ErrorFiltro({
+        name: "LIMITE_FILTROS",
+        message: "No se pueden registrar más de 5 filtros",
+      });
     }
     if (this.buscarFiltro(filtro.getNombre())) {
-      throw new Error("Ya existe un filtro con ese nombre");
+      throw new ErrorFiltro({
+        name: "FILTRO_DUPLICADO",
+        message: "Ya existe un filtro con ese nombre",
+      });
     }
     this._filtros.push(filtro);
   }
@@ -27,7 +34,10 @@ export class RegistroFiltros {
   public eliminarFiltro(nombre: string): void {
     const filtro = this.buscarFiltro(nombre);
     if (!filtro) {
-      throw new Error("No existe un filtro con ese nombre");
+      throw new ErrorFiltro({
+        name: "FILTRO_INEXISTENTE",
+        message: "No existe un filtro con ese nombre",
+      });
     }
     this._filtros = this._filtros.filter((f) => f !== filtro);
   }
@@ -35,7 +45,10 @@ export class RegistroFiltros {
   public aplicarFiltro(nombre: string, correos: Correo[]): Correo[] {
     const filtro = this.buscarFiltro(nombre);
     if (!filtro) {
-      throw new Error("No existe un filtro con ese nombre");
+      throw new ErrorFiltro({
+        name: "FILTRO_INEXISTENTE",
+        message: "No existe un filtro con ese nombre",
+      });
     }
     return filtro.aplicar(correos);
   }

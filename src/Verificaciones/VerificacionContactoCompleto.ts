@@ -1,3 +1,4 @@
+import { ErrorContacto } from "../Errores/ErrorContacto";
 import { IVerificacion } from "./IVerificacion";
 
 export interface DatosContacto {
@@ -8,7 +9,10 @@ export interface DatosContacto {
 export class VerificacionContactoCompleto implements IVerificacion<DatosContacto> {
   verificar(datos: DatosContacto): void {
     if (!datos.nombre || !datos.email) {
-      throw new Error("El contacto debe tener nombre y email");
+      throw new ErrorContacto({
+        name: "CONTACTO_INCOMPLETO",
+        message: "El contacto debe tener nombre y email",
+      });
     }
   }
 }

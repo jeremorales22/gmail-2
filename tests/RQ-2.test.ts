@@ -61,19 +61,25 @@ test("Para enviar un correo, deberá existir un remitente, un asunto válido y a
   // Sin remitente
   const sinRemitente = crearCorreo();
   sinRemitente.setRemitente(new Contacto());
-  expect(() => cliente.enviar(sinRemitente)).toThrow();
+  expect(() => cliente.enviar(sinRemitente)).toThrow(
+    expect.objectContaining({ name: "CAMPO_OBLIGATORIO" }),
+  );
 
   // Sin asunto
   const sinAsunto = new Correo();
   sinAsunto.setRemitente(ana);
   sinAsunto.setDestinatarios([luis]);
-  expect(() => cliente.enviar(sinAsunto)).toThrow();
+  expect(() => cliente.enviar(sinAsunto)).toThrow(
+    expect.objectContaining({ name: "CAMPO_OBLIGATORIO" }),
+  );
 
   // Sin destinatarios
   const sinDestinatarios = new Correo();
   sinDestinatarios.setAsunto("Reunión");
   sinDestinatarios.setRemitente(ana);
-  expect(() => cliente.enviar(sinDestinatarios)).toThrow();
+  expect(() => cliente.enviar(sinDestinatarios)).toThrow(
+    expect.objectContaining({ name: "CAMPO_OBLIGATORIO" }),
+  );
 
   // Ninguno quedó registrado como enviado
   expect(cliente.getEnviados().getCorreos()).toEqual([]);
