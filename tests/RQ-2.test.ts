@@ -4,17 +4,11 @@ import { Contacto } from "../src/Clases/Contacto";
 import { Correo } from "../src/Clases/Correo";
 
 function crearCorreo(): Correo {
-  const ana = new Contacto();
-  ana.setNombre("Ana");
-  ana.setEmail("ana@gmail.com");
+  const ana = new Contacto("Ana", "ana@gmail.com");
 
-  const luis = new Contacto();
-  luis.setNombre("Luis");
-  luis.setEmail("luis@gmail.com");
+  const luis = new Contacto("Luis", "luis@gmail.com");
 
-  const marta = new Contacto();
-  marta.setNombre("Marta");
-  marta.setEmail("marta@gmail.com");
+  const marta = new Contacto("Marta", "marta@gmail.com");
 
   const correo = new Correo();
   correo.setAsunto("Reunión");
@@ -25,17 +19,11 @@ function crearCorreo(): Correo {
 }
 
 test("Un correo podrá enviarse a múltiples destinatarios.", () => {
-  const ana = new Contacto();
-  ana.setNombre("Ana");
-  ana.setEmail("ana@gmail.com");
+  const ana = new Contacto("Ana", "ana@gmail.com");
 
-  const luis = new Contacto();
-  luis.setNombre("Luis");
-  luis.setEmail("luis@gmail.com");
+  const luis = new Contacto("Luis", "luis@gmail.com");
 
-  const marta = new Contacto();
-  marta.setNombre("Marta");
-  marta.setEmail("marta@gmail.com");
+  const marta = new Contacto("Marta", "marta@gmail.com");
 
   const cliente = new ClienteCorreo();
   const correo = crearCorreo();
@@ -48,13 +36,9 @@ test("Un correo podrá enviarse a múltiples destinatarios.", () => {
 });
 
 test("Para enviar un correo, deberá existir un remitente, un asunto válido y al menos un destinatario.", () => {
-  const ana = new Contacto();
-  ana.setNombre("Ana");
-  ana.setEmail("ana@gmail.com");
+  const ana = new Contacto("Ana", "ana@gmail.com");
 
-  const luis = new Contacto();
-  luis.setNombre("Luis");
-  luis.setEmail("luis@gmail.com");
+  const luis = new Contacto("Luis", "luis@gmail.com");
 
   const cliente = new ClienteCorreo();
 

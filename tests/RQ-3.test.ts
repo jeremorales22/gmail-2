@@ -3,10 +3,7 @@ import { Agenda } from "../src/Clases/Agenda";
 import { Contacto } from "../src/Clases/Contacto";
 
 function crearContacto(nombre: string, email: string): Contacto {
-  const contacto = new Contacto();
-  contacto.setNombre(nombre);
-  contacto.setEmail(email);
-  return contacto;
+  return new Contacto(nombre, email);
 }
 
 describe("RQ-3", () => {

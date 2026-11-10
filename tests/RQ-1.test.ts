@@ -4,16 +4,12 @@ import { Correo } from "../src/Clases/Correo";
 
 describe("RQ-1", () => {
   test("Se podrán crear múltiples correos con diferentes remitentes y destinatarios.", () => {
-    const ana = new Contacto();
-    ana.setNombre("Ana");
-    ana.setEmail("ana@gmail.com");
+    const ana = new Contacto("Ana", "ana@gmail.com");
 
-    const luis = new Contacto();
-    luis.setNombre("Luis");
+    const luis = new Contacto("Luis", "luis@gmail.com");
     luis.setEmail("luis@gmail.com");
 
-    const marta = new Contacto();
-    marta.setNombre("Marta");
+    const marta = new Contacto("Marta", "marta@gmail.com");
     marta.setEmail("marta@gmail.com");
 
     const correo1 = new Correo();
@@ -71,17 +67,11 @@ describe("RQ-1", () => {
   });
 
   test("Se deberá demostrar que los objetos creados mantienen correctamente su información.", () => {
-    const ana = new Contacto();
-    ana.setNombre("Ana");
-    ana.setEmail("ana@gmail.com");
+    const ana = new Contacto("Ana", "ana@gmail.com");
 
-    const luis = new Contacto();
-    luis.setNombre("Luis");
-    luis.setEmail("luis@gmail.com");
+    const luis = new Contacto("Luis", "luis@gmail.com");
 
-    const marta = new Contacto();
-    marta.setNombre("Marta");
-    marta.setEmail("marta@gmail.com");
+    const marta = new Contacto("Marta", "marta@gmail.com");
 
     const fechaEnvio = new Date("2026-10-31T10:00:00Z");
 
@@ -127,17 +117,11 @@ describe("RQ-1", () => {
   });
 
   test("Las colecciones de destinatarios no deberán exponer modificaciones que comprometan las reglas del dominio", () => {
-    const ana = new Contacto();
-    ana.setNombre("Ana");
-    ana.setEmail("ana@gmail.com");
+    const ana = new Contacto("Ana", "ana@gmail.com");
 
-    const luis = new Contacto();
-    luis.setNombre("Luis");
-    luis.setEmail("luis@gmail.com");
+    const luis = new Contacto("Luis", "luis@gmail.com");
 
-    const marta = new Contacto();
-    marta.setNombre("Marta");
-    marta.setEmail("marta@gmail.com");
+    const marta = new Contacto("Marta", "marta@gmail.com");
 
     const lista = [luis];
     const correo = new Correo();
