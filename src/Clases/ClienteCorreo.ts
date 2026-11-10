@@ -1,7 +1,15 @@
 import { ErrorCorreo } from "../Errores/ErrorCorreo";
 import { VerificacionCampoObligatorio } from "../Verificaciones/VerificacionCampoObligatorio";
 import { Bandeja } from "./Bandeja";
+import { Contacto } from "./Contacto";
 import { Correo } from "./Correo";
+
+export interface CambiosBorrador {
+  asunto?: string;
+  contenido?: string;
+  remitente?: Contacto;
+  destinatarios?: Contacto[];
+}
 
 export class ClienteCorreo {
   private _borradores: Bandeja;
@@ -21,6 +29,49 @@ export class ClienteCorreo {
 
   getEnviados(): Bandeja {
     return this._enviados;
+  }
+
+  /* Al iniciar la redacción, registra un borrador vacío en Borradores */
+  public crearBorrador(): Correo {
+    const borrador = new Correo();
+    this._borradores.agregarCorreo(borrador);
+    return borrador;
+  }
+
+  /* RF-07: Gestión de borradores */
+  /* Guarda un correo en Borradores */
+  public guardarBorrador(correo: Correo): void {
+    this._borradores.agregarCorreo(correo);
+  }
+
+  public obtenerBorrador(id: string): Correo {
+    const borrador = this._borradores
+      .getCorreos()
+      .find((correo) => correo.getId() === id);
+    if (!borrador) {
+      throw new ErrorCorreo({
+        name: "CORREO_NO_ENCONTRADO",
+        message: "El borrador no existe",
+      });
+    }
+    return borrador;
+  }
+
+  public editarBorrador(id: string, cambios: CambiosBorrador): Correo {
+    const borrador = this.obtenerBorrador(id);
+    if (cambios.asunto !== undefined) {
+      borrador.setAsunto(cambios.asunto);
+    }
+    if (cambios.contenido !== undefined) {
+      borrador.setContenido(cambios.contenido);
+    }
+    if (cambios.remitente !== undefined) {
+      borrador.setRemitente(cambios.remitente);
+    }
+    if (cambios.destinatarios !== undefined) {
+      borrador.setDestinatarios(cambios.destinatarios);
+    }
+    return borrador;
   }
 
   /* Mueve el correo a la bandeja de Enviados */
