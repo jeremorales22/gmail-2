@@ -1,3 +1,4 @@
+import { ErrorCorreo } from "../Errores/ErrorCorreo";
 import { VerificacionCampoObligatorio } from "../Verificaciones/VerificacionCampoObligatorio";
 import { Bandeja } from "./Bandeja";
 import { Correo } from "./Correo";
@@ -55,7 +56,7 @@ export class ClienteCorreo {
     ];
     return correos.filter((correo) => correo.contieneTexto(texto));
   }
-    private _papelera: Bandeja = new Bandeja();
+  private _papelera: Bandeja = new Bandeja();
   private _origenes: Map<Correo, Bandeja> = new Map();
 
   public getPapelera(): Bandeja {
@@ -64,10 +65,16 @@ export class ClienteCorreo {
 
   public mover(correo: Correo, origen: Bandeja, destino: Bandeja): void {
     if (!origen.contiene(correo)) {
-      throw new Error("El correo no está en la bandeja de origen");
+      throw new ErrorCorreo({
+        name: "CORREO_NO_ENCONTRADO",
+        message: "El correo no está en la bandeja de origen",
+      });
     }
     if (origen === destino) {
-      throw new Error("La bandeja de origen y la de destino son la misma");
+      throw new ErrorCorreo({
+        name: "BANDEJA_DESTINO_INVALIDA",
+        message: "La bandeja de origen y la de destino son la misma",
+      });
     }
     if (destino === this._papelera) {
       this.eliminar(correo, origen);
@@ -79,7 +86,10 @@ export class ClienteCorreo {
 
   public eliminar(correo: Correo, origen: Bandeja): void {
     if (!origen.contiene(correo)) {
-      throw new Error("El correo no está en esa bandeja");
+      throw new ErrorCorreo({
+        name: "CORREO_NO_ENCONTRADO",
+        message: "El correo no está en esa bandeja",
+      });
     }
     origen.quitarCorreo(correo);
     if (origen === this._papelera) {
@@ -93,7 +103,10 @@ export class ClienteCorreo {
   public restaurar(correo: Correo): void {
     const origen = this._origenes.get(correo);
     if (!this._papelera.contiene(correo) || !origen) {
-      throw new Error("El correo no está en la papelera");
+      throw new ErrorCorreo({
+        name: "CORREO_NO_ENCONTRADO",
+        message: "El correo no está en la papelera",
+      });
     }
     this._papelera.quitarCorreo(correo);
     origen.agregarCorreo(correo);
