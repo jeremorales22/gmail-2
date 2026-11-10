@@ -44,8 +44,8 @@ export class Agenda {
     const contacto = this.buscarPorEmail(email);
     if (!contacto) {
       throw new ErrorContacto({
-        name: "CONTACTO_DUPLICADO",
-        message: "Ya existe un contacto con ese email",
+        name: "CONTACTO_INEXISTENTE",
+        message: "No existe un contacto con ese email",
       });
     }
 
@@ -57,8 +57,8 @@ export class Agenda {
     const otro = this.buscarPorEmail(nuevoEmail);
     if (otro && otro !== contacto) {
       throw new ErrorContacto({
-        name: "CONTACTO_INEXISTENTE",
-        message: "No existe un contacto con ese email",
+        name: "CONTACTO_DUPLICADO",
+        message: "Ya existe un contacto con ese email",
       });
     }
     contacto.setNombre(nuevoNombre);

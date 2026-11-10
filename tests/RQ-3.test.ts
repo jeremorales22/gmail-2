@@ -24,7 +24,9 @@ describe("RQ-3", () => {
   test("No se podrá dar de alta un contacto sin nombre o sin email.", () => {
     const agenda = new Agenda();
 
-    expect(() => agenda.agregarContacto(new Contacto())).toThrow();
+    expect(() => agenda.agregarContacto(new Contacto())).toThrow(
+      expect.objectContaining({ name: "CONTACTO_INCOMPLETO" }),
+    );
     expect(agenda.getContactos()).toEqual([]);
   });
 
@@ -32,7 +34,9 @@ describe("RQ-3", () => {
     const agenda = new Agenda();
     agenda.agregarContacto(crearContacto("Ana", "ana@gmail.com"));
 
-    expect(() => agenda.agregarContacto(crearContacto("Otra Ana", "ANA@gmail.com"))).toThrow();
+    expect(() =>
+      agenda.agregarContacto(crearContacto("Otra Ana", "ANA@gmail.com")),
+    ).toThrow(expect.objectContaining({ name: "CONTACTO_DUPLICADO" }));
     expect(agenda.getContactos()).toHaveLength(1);
   });
 
@@ -49,7 +53,11 @@ describe("RQ-3", () => {
     const agenda = new Agenda();
     agenda.agregarContacto(crearContacto("Ana", "ana@gmail.com"));
 
-    agenda.modificarContacto("ana@gmail.com", "Ana Paula", "anapaula@gmail.com");
+    agenda.modificarContacto(
+      "ana@gmail.com",
+      "Ana Paula",
+      "anapaula@gmail.com",
+    );
 
     const modificado = agenda.buscarPorEmail("anapaula@gmail.com");
     expect(modificado?.getNombre()).toBe("Ana Paula");
@@ -62,7 +70,9 @@ describe("RQ-3", () => {
 
     agenda.modificarContacto("ana@gmail.com", "Ana Paula", "ana@gmail.com");
 
-    expect(agenda.buscarPorEmail("ana@gmail.com")?.getNombre()).toBe("Ana Paula");
+    expect(agenda.buscarPorEmail("ana@gmail.com")?.getNombre()).toBe(
+      "Ana Paula",
+    );
   });
 
   test("Una modificación inválida no deberá alterar el contacto.", () => {
@@ -71,9 +81,15 @@ describe("RQ-3", () => {
     agenda.agregarContacto(ana);
     agenda.agregarContacto(crearContacto("Luis", "luis@gmail.com"));
 
-    expect(() => agenda.modificarContacto("nadie@gmail.com", "X", "x@gmail.com")).toThrow();
-    expect(() => agenda.modificarContacto("ana@gmail.com", "", "ana@gmail.com")).toThrow();
-    expect(() => agenda.modificarContacto("ana@gmail.com", "Ana", "luis@gmail.com")).toThrow();
+    expect(() =>
+      agenda.modificarContacto("nadie@gmail.com", "X", "x@gmail.com"),
+    ).toThrow(expect.objectContaining({ name: "CONTACTO_INEXISTENTE" }));
+    expect(() =>
+      agenda.modificarContacto("ana@gmail.com", "", "ana@gmail.com"),
+    ).toThrow(expect.objectContaining({ name: "CONTACTO_INCOMPLETO" }));
+    expect(() =>
+      agenda.modificarContacto("ana@gmail.com", "Ana", "luis@gmail.com"),
+    ).toThrow(expect.objectContaining({ name: "CONTACTO_DUPLICADO" }));
 
     expect(ana.getNombre()).toBe("Ana");
     expect(ana.getEmail()).toBe("ana@gmail.com");
@@ -89,7 +105,9 @@ describe("RQ-3", () => {
     agenda.eliminarContacto("ana@gmail.com");
 
     expect(agenda.getContactos()).toEqual([luis]);
-    expect(() => agenda.eliminarContacto("ana@gmail.com")).toThrow();
+    expect(() => agenda.eliminarContacto("ana@gmail.com")).toThrow(
+      expect.objectContaining({ name: "CONTACTO_INEXISTENTE" }),
+    );
   });
 
   test("La colección de contactos no deberá exponer modificaciones externas.", () => {
