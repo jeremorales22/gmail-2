@@ -198,4 +198,17 @@ export class ClienteCorreo {
   private correosActivos(): Correo[] {
     return [...this._enviados.getCorreos(), ...this._borradores.getCorreos()];
   }
+    /* RF-09: Gestión de correos favoritos */
+  public marcarComoFavorito(id: string): void {
+    this.obtenerCorreo(id).setFavorito(true);
+  }
+
+  public desmarcarFavorito(id: string): void {
+    this.obtenerCorreo(id).setFavorito(false);
+  }
+
+  /* Vista de favoritos: Enviados y Borradores (no la Papelera) */
+  public obtenerFavoritos(): Correo[] {
+    return this.correosActivos().filter(esFavorito);
+  }
 }
