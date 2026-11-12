@@ -3,7 +3,7 @@ import { VerificacionCampoObligatorio } from "../Verificaciones/VerificacionCamp
 import { Bandeja } from "./Bandeja";
 import { Contacto } from "./Contacto";
 import { Correo } from "./Correo";
-import { noLeido } from "./Filtros";
+import { esFavorito, noLeido } from "./Filtros";
 
 export interface CambiosBorrador {
   asunto?: string;
