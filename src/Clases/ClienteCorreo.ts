@@ -3,6 +3,7 @@ import { VerificacionCampoObligatorio } from "../Verificaciones/VerificacionCamp
 import { Bandeja } from "./Bandeja";
 import { Contacto } from "./Contacto";
 import { Correo } from "./Correo";
+import { noLeido } from "./Filtros";
 
 export interface CambiosBorrador {
   asunto?: string;
@@ -162,5 +163,39 @@ export class ClienteCorreo {
     this._papelera.quitarCorreo(correo);
     origen.agregarCorreo(correo);
     this._origenes.delete(correo);
+  }
+    /* RF-08: Marcar correos como leídos o no leídos */
+  /* Busca un correo por su id en todas las bandejas */
+  public obtenerCorreo(id: string): Correo {
+    const correo = [
+      ...this._enviados.getCorreos(),
+      ...this._borradores.getCorreos(),
+      ...this._papelera.getCorreos(),
+    ].find((c) => c.getId() === id);
+    if (!correo) {
+      throw new ErrorCorreo({
+        name: "CORREO_NO_ENCONTRADO",
+        message: "El correo no existe",
+      });
+    }
+    return correo;
+  }
+
+  public marcarComoLeido(id: string): void {
+    this.obtenerCorreo(id).setLeido(true);
+  }
+
+  public marcarComoNoLeido(id: string): void {
+    this.obtenerCorreo(id).setLeido(false);
+  }
+
+  /* Sin bandeja: consulta Enviados y Borradores (no la Papelera) */
+  public obtenerNoLeidos(bandeja?: Bandeja): Correo[] {
+    const correos = bandeja ? bandeja.getCorreos() : this.correosActivos();
+    return correos.filter(noLeido);
+  }
+
+  private correosActivos(): Correo[] {
+    return [...this._enviados.getCorreos(), ...this._borradores.getCorreos()];
   }
 }
