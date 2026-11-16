@@ -15,6 +15,7 @@ export interface CambiosBorrador {
 export class ClienteCorreo {
   private _borradores: Bandeja;
   private _enviados: Bandeja;
+  private _recibidos: Bandeja;
 
   constructor() {
     this._borradores = new Bandeja();
@@ -22,6 +23,9 @@ export class ClienteCorreo {
 
     this._enviados = new Bandeja();
     this._enviados.setNombre("Enviados");
+
+    this._recibidos = new Bandeja();
+    this._recibidos.setNombre("Recibidos");
   }
 
   getBorradores(): Bandeja {
@@ -30,6 +34,10 @@ export class ClienteCorreo {
 
   getEnviados(): Bandeja {
     return this._enviados;
+  }
+
+  getRecibidos(): Bandeja {
+    return this._recibidos;
   }
 
   /* Al iniciar la redacción, registra un borrador vacío en Borradores */
@@ -164,7 +172,7 @@ export class ClienteCorreo {
     origen.agregarCorreo(correo);
     this._origenes.delete(correo);
   }
-    /* RF-08: Marcar correos como leídos o no leídos */
+  /* RF-08: Marcar correos como leídos o no leídos */
   /* Busca un correo por su id en todas las bandejas */
   public obtenerCorreo(id: string): Correo {
     const correo = [
@@ -198,7 +206,7 @@ export class ClienteCorreo {
   private correosActivos(): Correo[] {
     return [...this._enviados.getCorreos(), ...this._borradores.getCorreos()];
   }
-    /* RF-09: Gestión de correos favoritos */
+  /* RF-09: Gestión de correos favoritos */
   public marcarComoFavorito(id: string): void {
     this.obtenerCorreo(id).setFavorito(true);
   }
@@ -210,5 +218,9 @@ export class ClienteCorreo {
   /* Vista de favoritos: Enviados y Borradores (no la Papelera) */
   public obtenerFavoritos(): Correo[] {
     return this.correosActivos().filter(esFavorito);
+  }
+
+  public recibir(correo: Correo): void {
+    this._recibidos.agregarCorreo(correo);
   }
 }
