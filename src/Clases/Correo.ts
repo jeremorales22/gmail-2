@@ -133,6 +133,24 @@ export class Correo {
     new VerificacionCampoObligatorio(nombreCampo).verificar(valor);
   }
 
+  /* Copia para un destinatario: mismo id y contenido, pero con su propio estado de lectura y favorito (no se comparte con el original) */
+  public copiar(): Correo {
+    const copiarContacto = (c: Contacto) =>
+      new Contacto(c.getNombre(), c.getEmail());
+
+    const copia = new Correo();
+    copia._id = this._id;
+    copia._asunto = this._asunto;
+    copia._contenido = this._contenido;
+    copia._remitente = copiarContacto(this._remitente);
+    copia._destinatarios = this._destinatarios.map(copiarContacto);
+    copia._destinarariosCC = this._destinarariosCC.map(copiarContacto);
+    copia._destinarariosCCO = this._destinarariosCCO.map(copiarContacto);
+    copia._fechaEnvio = this._fechaEnvio;
+    copia._fechaCreacion = this._fechaCreacion;
+    return copia;
+  }
+
   public contieneTexto(texto: string): boolean {
     const buscado = texto.trim().toLowerCase();
     if (buscado === "") return false;
