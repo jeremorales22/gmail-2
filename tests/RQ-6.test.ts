@@ -18,62 +18,82 @@ function crearCorreo(asunto: string): Correo {
 }
 
 describe("RQ-6", () => {
-  test("Un correo se podrá mover de una bandeja a otra.", () => {
+  test("Cada correo deberá pertenecer a una única bandeja física en un momento determinado.", () => {
     const cliente = new ClienteCorreo();
     const trabajo = new Bandeja();
     const correo = crearCorreo("Parcial");
+    const bandejas = [
+      cliente.getBorradores(),
+      cliente.getEnviados(),
+      cliente.getPapelera(),
+      trabajo,
+    ];
+    const cantidad = () => bandejas.filter((b) => b.contiene(correo)).length;
+
+    cliente.getBorradores().agregarCorreo(correo);
+    expect(cantidad()).toBe(1);
+
     cliente.enviar(correo);
+    expect(cantidad()).toBe(1);
 
     cliente.mover(correo, cliente.getEnviados(), trabajo);
-
     expect(cliente.getEnviados().contiene(correo)).toBe(false);
     expect(trabajo.contiene(correo)).toBe(true);
+    expect(cantidad()).toBe(1);
+
+    cliente.eliminar(correo, trabajo);
+    expect(cantidad()).toBe(1);
+
+    cliente.restaurar(correo);
+    expect(cantidad()).toBe(1);
   });
 
-  test("No se podrá mover un correo que no está en la bandeja de origen.", () => {
+  test("Se podrán consultar los correos contenidos en cada bandeja.", () => {
     const cliente = new ClienteCorreo();
-    const trabajo = new Bandeja();
-    const correo = crearCorreo("Parcial");
+    const enviado = crearCorreo("Enviado");
+    const borrador = crearCorreo("Borrador");
+    const eliminado = crearCorreo("Eliminado");
+    cliente.enviar(enviado);
+    cliente.enviar(eliminado);
+    cliente.getBorradores().agregarCorreo(borrador);
+    cliente.eliminar(eliminado, cliente.getEnviados());
 
-    expect(() => cliente.mover(correo, cliente.getEnviados(), trabajo)).toThrow(
-      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
-    );
-    expect(trabajo.getCorreos()).toEqual([]);
+    expect(cliente.getEnviados().getCorreos()).toEqual([enviado]);
+    expect(cliente.getBorradores().getCorreos()).toEqual([borrador]);
+    expect(cliente.getPapelera().getCorreos()).toEqual([eliminado]);
   });
 
-  test("No se podrá mover un correo a la misma bandeja.", () => {
+  test("El sistema deberá permitir eliminar lógicamente un correo, trasladándolo a Eliminados.", () => {
     const cliente = new ClienteCorreo();
     const correo = crearCorreo("Parcial");
+    const otro = crearCorreo("Otro");
     cliente.enviar(correo);
+    cliente.enviar(otro);
 
-    expect(() =>
-      cliente.mover(correo, cliente.getEnviados(), cliente.getEnviados()),
-    ).toThrow(expect.objectContaining({ name: "BANDEJA_DESTINO_INVALIDA" }));
-    expect(cliente.getEnviados().getCorreos()).toHaveLength(1);
-  });
-
-  test("Un correo eliminado deberá pasar a la Papelera.", () => {
-    const cliente = new ClienteCorreo();
-    const correo = crearCorreo("Parcial");
-    cliente.enviar(correo);
-
+    // Eliminar lo traslada a la Papelera
     cliente.eliminar(correo, cliente.getEnviados());
-
     expect(cliente.getEnviados().contiene(correo)).toBe(false);
     expect(cliente.getPapelera().contiene(correo)).toBe(true);
-  });
 
-  test("No se podrá eliminar un correo que no está en la bandeja indicada.", () => {
-    const cliente = new ClienteCorreo();
-    const correo = crearCorreo("Parcial");
+    // Mover a la Papelera equivale a eliminar
+    cliente.mover(otro, cliente.getEnviados(), cliente.getPapelera());
+    expect(cliente.getPapelera().contiene(otro)).toBe(true);
 
-    expect(() => cliente.eliminar(correo, cliente.getEnviados())).toThrow(
+    // No se puede eliminar un correo que no está en la bandeja indicada
+    expect(() => cliente.eliminar(crearCorreo("Nuevo"), cliente.getEnviados())).toThrow(
       expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
     );
-    expect(cliente.getPapelera().getCorreos()).toEqual([]);
+
+    // Eliminar desde la Papelera lo borra definitivamente
+    cliente.eliminar(correo, cliente.getPapelera());
+    expect(cliente.getPapelera().contiene(correo)).toBe(false);
+    expect(cliente.getEnviados().contiene(correo)).toBe(false);
+    expect(() => cliente.restaurar(correo)).toThrow(
+      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
+    );
   });
 
-  test("Un correo restaurado deberá volver a la bandeja de donde fue eliminado.", () => {
+  test("Un correo eliminado podrá restaurarse a su bandeja de origen.", () => {
     const cliente = new ClienteCorreo();
     const enviado = crearCorreo("Enviado");
     const borrador = crearCorreo("Borrador");
@@ -88,41 +108,37 @@ describe("RQ-6", () => {
     expect(cliente.getEnviados().contiene(enviado)).toBe(true);
     expect(cliente.getBorradores().contiene(borrador)).toBe(true);
     expect(cliente.getPapelera().getCorreos()).toEqual([]);
-  });
 
-  test("Mover un correo a la Papelera deberá equivaler a eliminarlo.", () => {
-    const cliente = new ClienteCorreo();
-    const correo = crearCorreo("Parcial");
-    cliente.enviar(correo);
-
-    cliente.mover(correo, cliente.getEnviados(), cliente.getPapelera());
-    cliente.restaurar(correo);
-
-    expect(cliente.getEnviados().contiene(correo)).toBe(true);
-  });
-
-  test("No se podrá restaurar un correo que no está en la Papelera.", () => {
-    const cliente = new ClienteCorreo();
-    const correo = crearCorreo("Parcial");
-    cliente.enviar(correo);
-
-    expect(() => cliente.restaurar(correo)).toThrow(
+    // No se puede restaurar un correo que no está en la Papelera
+    expect(() => cliente.restaurar(enviado)).toThrow(
       expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
     );
   });
 
-  test("Eliminar un correo desde la Papelera lo borrará definitivamente.", () => {
+  test("No deberán generarse duplicados al mover correos.", () => {
     const cliente = new ClienteCorreo();
+    const trabajo = new Bandeja();
     const correo = crearCorreo("Parcial");
     cliente.enviar(correo);
-    cliente.eliminar(correo, cliente.getEnviados());
 
-    cliente.eliminar(correo, cliente.getPapelera());
+    cliente.mover(correo, cliente.getEnviados(), trabajo);
 
-    expect(cliente.getPapelera().contiene(correo)).toBe(false);
-    expect(cliente.getEnviados().contiene(correo)).toBe(false);
-    expect(() => cliente.restaurar(correo)).toThrow(
+    // Intentar moverlo otra vez desde donde ya no está
+    expect(() => cliente.mover(correo, cliente.getEnviados(), trabajo)).toThrow(
       expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
     );
+    expect(trabajo.getCorreos()).toHaveLength(1);
+
+    // Intentar moverlo a la misma bandeja
+    expect(() => cliente.mover(correo, trabajo, trabajo)).toThrow(
+      expect.objectContaining({ name: "BANDEJA_DESTINO_INVALIDA" }),
+    );
+    expect(trabajo.getCorreos()).toHaveLength(1);
+
+    // Ida y vuelta: sigue habiendo una sola copia
+    cliente.mover(correo, trabajo, cliente.getEnviados());
+    cliente.mover(correo, cliente.getEnviados(), trabajo);
+    expect(trabajo.getCorreos()).toHaveLength(1);
+    expect(cliente.getEnviados().getCorreos()).toEqual([]);
   });
 });

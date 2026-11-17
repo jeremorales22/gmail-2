@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { ClienteCorreo } from "../src/Clases/ClienteCorreo";
 import { Contacto } from "../src/Clases/Contacto";
 import { Correo } from "../src/Clases/Correo";
+import { Filtro, noLeido } from "../src/Clases/Filtros";
 
 function crearCorreo(asunto: string): Correo {
   const correo = new Correo();
@@ -13,27 +14,27 @@ function crearCorreo(asunto: string): Correo {
 }
 
 describe("RQ-8", () => {
-  test("Un correo nuevo deberá comenzar como no leído.", () => {
-    const cliente = new ClienteCorreo();
-    const correo = crearCorreo("Parcial");
-    cliente.enviar(correo);
-
-    expect(correo.getLeido()).toBe(false);
-    expect(cliente.obtenerNoLeidos()).toEqual([correo]);
-  });
-
   test("Se podrá marcar un correo como leído.", () => {
     const cliente = new ClienteCorreo();
     const correo = crearCorreo("Parcial");
     cliente.enviar(correo);
+    expect(correo.getLeido()).toBe(false);
 
     cliente.marcarComoLeido(correo.getId());
-
     expect(correo.getLeido()).toBe(true);
-    expect(cliente.obtenerNoLeidos()).toEqual([]);
+
+    // Marcarlo dos veces no genera cambios inesperados
+    cliente.marcarComoLeido(correo.getId());
+    expect(correo.getLeido()).toBe(true);
+    expect(cliente.getEnviados().getCorreos()).toHaveLength(1);
+
+    // No se puede marcar un correo que no existe
+    expect(() => cliente.marcarComoLeido("id-inexistente")).toThrow(
+      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
+    );
   });
 
-  test("Se podrá volver a marcar un correo como no leído.", () => {
+  test("Se podrá marcar nuevamente como no leído.", () => {
     const cliente = new ClienteCorreo();
     const correo = crearCorreo("Parcial");
     cliente.enviar(correo);
@@ -42,76 +43,63 @@ describe("RQ-8", () => {
     cliente.marcarComoNoLeido(correo.getId());
 
     expect(correo.getLeido()).toBe(false);
-    expect(cliente.obtenerNoLeidos()).toEqual([correo]);
+    expect(() => cliente.marcarComoNoLeido("id-inexistente")).toThrow(
+      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
+    );
   });
 
-  test("Marcar dos veces el mismo estado no deberá generar cambios inesperados.", () => {
+  test("El estado deberá mantenerse al consultar el correo.", () => {
     const cliente = new ClienteCorreo();
     const correo = crearCorreo("Parcial");
     cliente.enviar(correo);
 
     cliente.marcarComoLeido(correo.getId());
-    cliente.marcarComoLeido(correo.getId());
 
-    expect(correo.getLeido()).toBe(true);
-    expect(cliente.getEnviados().getCorreos()).toHaveLength(1);
+    expect(cliente.obtenerCorreo(correo.getId()).getLeido()).toBe(true);
+    expect(cliente.obtenerCorreo(correo.getId()).getLeido()).toBe(true);
+    expect(cliente.getEnviados().getCorreos()[0].getLeido()).toBe(true);
+
+    // También se mantiene si el correo está en la Papelera
+    cliente.eliminar(correo, cliente.getEnviados());
+    expect(cliente.obtenerCorreo(correo.getId()).getLeido()).toBe(true);
+    cliente.marcarComoNoLeido(correo.getId());
+    expect(cliente.obtenerCorreo(correo.getId()).getLeido()).toBe(false);
   });
 
-  test("Se podrán consultar los correos no leídos de todas las bandejas.", () => {
+  test("Se deberán poder obtener todos los correos no leídos de una bandeja.", () => {
     const cliente = new ClienteCorreo();
     const enviado = crearCorreo("Enviado");
     const leido = crearCorreo("Leído");
+    const eliminado = crearCorreo("Eliminado");
     cliente.enviar(enviado);
     cliente.enviar(leido);
+    cliente.enviar(eliminado);
     const borrador = cliente.crearBorrador();
     cliente.marcarComoLeido(leido.getId());
+    cliente.eliminar(eliminado, cliente.getEnviados());
 
+    // De una bandeja en particular
+    expect(cliente.obtenerNoLeidos(cliente.getEnviados())).toEqual([enviado]);
+    expect(cliente.obtenerNoLeidos(cliente.getPapelera())).toEqual([eliminado]);
+
+    // De todas las bandejas (la Papelera no cuenta)
     const noLeidos = cliente.obtenerNoLeidos();
-
     expect(noLeidos).toHaveLength(2);
     expect(noLeidos).toContain(enviado);
     expect(noLeidos).toContain(borrador);
   });
 
-  test("Se podrán consultar los correos no leídos de una bandeja en particular.", () => {
-    const cliente = new ClienteCorreo();
-    const enviado = crearCorreo("Enviado");
-    cliente.enviar(enviado);
-    cliente.crearBorrador();
-
-    expect(cliente.obtenerNoLeidos(cliente.getEnviados())).toEqual([enviado]);
-  });
-
-  test("Los correos de la Papelera no deberán contarse como no leídos.", () => {
+  test("El cambio de estado deberá reflejarse inmediatamente en los resultados de los filtros correspondientes.", () => {
     const cliente = new ClienteCorreo();
     const correo = crearCorreo("Parcial");
     cliente.enviar(correo);
-
-    cliente.eliminar(correo, cliente.getEnviados());
-
-    expect(cliente.obtenerNoLeidos()).toEqual([]);
-    expect(cliente.obtenerNoLeidos(cliente.getPapelera())).toEqual([correo]);
-  });
-
-  test("Se podrá cambiar el estado de lectura de un correo en la Papelera.", () => {
-    const cliente = new ClienteCorreo();
-    const correo = crearCorreo("Parcial");
-    cliente.enviar(correo);
-    cliente.eliminar(correo, cliente.getEnviados());
+    const filtro = new Filtro("No leídos", noLeido);
+    expect(filtro.aplicar(cliente.getEnviados().getCorreos())).toEqual([correo]);
 
     cliente.marcarComoLeido(correo.getId());
+    expect(filtro.aplicar(cliente.getEnviados().getCorreos())).toEqual([]);
 
-    expect(correo.getLeido()).toBe(true);
-  });
-
-  test("No se podrá marcar un correo que no existe.", () => {
-    const cliente = new ClienteCorreo();
-
-    expect(() => cliente.marcarComoLeido("id-inexistente")).toThrow(
-      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
-    );
-    expect(() => cliente.marcarComoNoLeido("id-inexistente")).toThrow(
-      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
-    );
+    cliente.marcarComoNoLeido(correo.getId());
+    expect(filtro.aplicar(cliente.getEnviados().getCorreos())).toEqual([correo]);
   });
 });

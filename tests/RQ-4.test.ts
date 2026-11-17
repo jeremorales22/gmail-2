@@ -17,50 +17,50 @@ function crearCorreo(asunto: string, contenido: string): Correo {
 }
 
 describe("RQ-4", () => {
-  test("Se podrán buscar correos por su asunto o contenido.", () => {
+  test("La búsqueda no deberá distinguir entre mayúsculas y minúsculas.", () => {
+    const cliente = new ClienteCorreo();
+    const correo = crearCorreo("Parcial", "Estudiar");
+    cliente.enviar(correo);
+
+    expect(cliente.buscar("PARCIAL")).toEqual([correo]);
+    expect(cliente.buscar("parcial")).toEqual([correo]);
+    expect(cliente.buscar("PaRcIaL")).toEqual([correo]);
+  });
+
+  test("Se deberán admitir coincidencias parciales.", () => {
     const cliente = new ClienteCorreo();
     const parcial = crearCorreo("Parcial", "Estudiar programación");
     const reunion = crearCorreo("Reunión", "Traer los sprints");
     cliente.enviar(parcial);
     cliente.enviar(reunion);
 
-    expect(cliente.buscar("Parcial")).toEqual([parcial]);
-    expect(cliente.buscar("sprints")).toEqual([reunion]);
+    // En el asunto y en el contenido
+    expect(cliente.buscar("parc")).toEqual([parcial]);
+    expect(cliente.buscar("sprint")).toEqual([reunion]);
+
+    // En el remitente y en el destinatario
+    expect(cliente.buscar("ana@gm")).toHaveLength(2);
+    expect(cliente.buscar("lui")).toHaveLength(2);
   });
 
-  test("Se podrán buscar correos por remitente o destinatario.", () => {
+    test("Un correo deberá aparecer una sola vez, aunque coincida con varios campos.", () => {
     const cliente = new ClienteCorreo();
-    const correo = crearCorreo("Parcial", "Estudiar");
-    cliente.enviar(correo);
-
-    expect(cliente.buscar("ana@gmail.com")).toEqual([correo]);
-    expect(cliente.buscar("Luis")).toEqual([correo]);
-  });
-
-  test("La búsqueda no deberá distinguir mayúsculas de minúsculas.", () => {
-    const cliente = new ClienteCorreo();
-    const correo = crearCorreo("Parcial", "Estudiar");
-    cliente.enviar(correo);
-
-    expect(cliente.buscar("PARCIAL")).toEqual([correo]);
-    expect(cliente.buscar("parc")).toEqual([correo]);
-  });
-
-  test("La búsqueda deberá incluir correos de distintas bandejas.", () => {
-    const cliente = new ClienteCorreo();
-    const enviado = crearCorreo("Proyecto final", "Enviado");
+    const enviado = crearCorreo("Reunión de equipo", "La reunión es el lunes");
     const borrador = crearCorreo("Proyecto nuevo", "Sin enviar");
     cliente.enviar(enviado);
-    cliente.getBorradores().agregarCorreo(borrador);
+    cliente.guardarBorrador(borrador);
 
-    const resultado = cliente.buscar("proyecto");
+    // "reunión" está en el asunto y en el contenido del mismo correo
+    expect(cliente.buscar("reunión")).toEqual([enviado]);
 
+    // Busca en todas las bandejas, cada correo una vez
+    const resultado = cliente.buscar("@gmail.com");
     expect(resultado).toHaveLength(2);
     expect(resultado).toContain(enviado);
     expect(resultado).toContain(borrador);
   });
 
-  test("Si no hay coincidencias o el texto está vacío, el resultado será una lista vacía.", () => {
+  test("Se deberá devolver una colección vacía cuando no existan coincidencias.", () => {
     const cliente = new ClienteCorreo();
     cliente.enviar(crearCorreo("Parcial", "Estudiar"));
 
@@ -69,7 +69,7 @@ describe("RQ-4", () => {
     expect(cliente.buscar("   ")).toEqual([]);
   });
 
-  test("La búsqueda no deberá modificar las bandejas.", () => {
+  test("La búsqueda no deberá modificar los correos originales.", () => {
     const cliente = new ClienteCorreo();
     const correo = crearCorreo("Parcial", "Estudiar");
     cliente.enviar(correo);
@@ -77,13 +77,16 @@ describe("RQ-4", () => {
     cliente.buscar("Parcial").pop();
 
     expect(cliente.getEnviados().contiene(correo)).toBe(true);
+    expect(correo.getAsunto()).toBe("Parcial");
+    expect(correo.getContenido()).toBe("Estudiar");
+    expect(correo.getLeido()).toBe(false);
+    expect(correo.getFavorito()).toBe(false);
   });
 
-  test("contieneTexto deberá funcionar en un correo sin remitente.", () => {
-    const correo = new Correo();
-    correo.setAsunto("Parcial");
+  test("Se deberán contemplar búsquedas sobre bandejas vacías.", () => {
+    const cliente = new ClienteCorreo();
 
-    expect(correo.contieneTexto("parcial")).toBe(true);
-    expect(correo.contieneTexto("ana")).toBe(false);
+    expect(cliente.buscar("x")).toEqual([]);
+    expect(cliente.buscar("")).toEqual([]);
   });
 });

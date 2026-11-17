@@ -42,130 +42,108 @@ const sprints = crearCorreo("Sprints", luis, false, false);
 const correos = [parcial, reunion, sprints];
 
 describe("RQ-5", () => {
-  test("Un filtro deberá devolver solo los correos que cumplen su condición.", () => {
+  test("Cada filtro deberá identificar correctamente los correos que cumplen su condición.", () => {
     const filtro = new Filtro("De Ana", deRemitente("ana@gmail.com"));
 
     expect(filtro.aplicar(correos)).toEqual([parcial, reunion]);
+    expect(filtro.cumple(parcial)).toBe(true);
     expect(filtro.cumple(sprints)).toBe(false);
-  });
 
-  test("Se deberán proveer filtros de ejemplo.", () => {
-    expect(new Filtro("No leídos", noLeido).aplicar(correos)).toEqual([
-      parcial,
-      sprints,
-    ]);
-    expect(new Filtro("Favoritos", esFavorito).aplicar(correos)).toEqual([
-      parcial,
-    ]);
-    expect(new Filtro("Sprints", conTexto("sprints")).aplicar(correos)).toEqual(
-      [sprints],
-    );
-  });
-
-  test("Los filtros se podrán combinar con and.", () => {
-    const filtro = new Filtro(
-      "De Ana sin leer",
-      and(deRemitente("ana@gmail.com"), noLeido),
-    );
-
-    expect(filtro.aplicar(correos)).toEqual([parcial]);
-  });
-
-  test("Los filtros se podrán combinar con or.", () => {
-    const filtro = new Filtro(
-      "Favoritos o de Luis",
-      or(esFavorito, deRemitente("luis@gmail.com")),
-    );
-
-    expect(filtro.aplicar(correos)).toEqual([parcial, sprints]);
-  });
-
-  test("Los filtros se podrán negar con not.", () => {
-    const filtro = new Filtro("Leídos", not(noLeido));
-
-    expect(filtro.aplicar(correos)).toEqual([reunion]);
-  });
-
-  test("Las combinaciones se podrán anidar.", () => {
-    const filtro = new Filtro(
-      "De Ana sin leer, o de Luis",
-      or(
-        and(deRemitente("ana@gmail.com"), noLeido),
-        deRemitente("luis@gmail.com"),
-      ),
-    );
-
-    expect(filtro.aplicar(correos)).toEqual([parcial, sprints]);
-  });
-
-  test("Un filtro deberá tener nombre.", () => {
+    // Un filtro debe tener nombre
     expect(() => new Filtro("", noLeido)).toThrow(
       expect.objectContaining({ name: "FILTRO_SIN_NOMBRE" }),
     );
   });
 
-  test("Aplicar un filtro no deberá modificar la lista original.", () => {
-    const lista = [parcial, reunion, sprints];
+  test("Los filtros compuestos deberán evaluar correctamente sus operadores lógicos.", () => {
+    const conAnd = new Filtro("De Ana sin leer", and(deRemitente("ana@gmail.com"), noLeido));
+    const conOr = new Filtro("Favoritos o de Luis", or(esFavorito, deRemitente("luis@gmail.com")));
+    const conNot = new Filtro("Leídos", not(noLeido));
 
-    new Filtro("No leídos", noLeido).aplicar(lista);
-
-    expect(lista).toEqual([parcial, reunion, sprints]);
+    expect(conAnd.aplicar(correos)).toEqual([parcial]);
+    expect(conOr.aplicar(correos)).toEqual([parcial, sprints]);
+    expect(conNot.aplicar(correos)).toEqual([reunion]);
   });
 
-  test("Se podrán registrar filtros y aplicarlos por su nombre.", () => {
-    const registro = new RegistroFiltros();
-    registro.agregarFiltro(new Filtro("Favoritos", esFavorito));
+  test("Se deberán probar filtros simples y complejos.", () => {
+    // Simples
+    expect(new Filtro("No leídos", noLeido).aplicar(correos)).toEqual([parcial, sprints]);
+    expect(new Filtro("Favoritos", esFavorito).aplicar(correos)).toEqual([parcial]);
+    expect(new Filtro("Sprints", conTexto("sprints")).aplicar(correos)).toEqual([sprints]);
 
-    expect(registro.getFiltros()).toHaveLength(1);
-    expect(registro.aplicarFiltro("Favoritos", correos)).toEqual([parcial]);
+    // Complejo: combinaciones anidadas
+    const complejo = new Filtro(
+      "De Ana sin leer, o de Luis",
+      or(and(deRemitente("ana@gmail.com"), noLeido), deRemitente("luis@gmail.com")),
+    );
+    expect(complejo.aplicar(correos)).toEqual([parcial, sprints]);
   });
 
-  test("El registro no deberá admitir más de 5 filtros.", () => {
+  test("Se deberá impedir registrar más de cinco filtros.", () => {
     const registro = new RegistroFiltros();
     for (let i = 1; i <= 5; i++) {
       registro.agregarFiltro(new Filtro("Filtro " + i, noLeido));
     }
 
-    expect(() =>
-      registro.agregarFiltro(new Filtro("Filtro 6", noLeido)),
-    ).toThrow(expect.objectContaining({ name: "LIMITE_FILTROS" }));
+    expect(() => registro.agregarFiltro(new Filtro("Filtro 6", noLeido))).toThrow(
+      expect.objectContaining({ name: "LIMITE_FILTROS" }),
+    );
     expect(registro.getFiltros()).toHaveLength(5);
-  });
 
-  test("No se podrán registrar dos filtros con el mismo nombre.", () => {
-    const registro = new RegistroFiltros();
-    registro.agregarFiltro(new Filtro("Favoritos", esFavorito));
+    // La colección no se puede modificar desde afuera
+    registro.getFiltros().push(new Filtro("Intruso", noLeido));
+    expect(registro.getFiltros()).toHaveLength(5);
 
-    expect(() =>
-      registro.agregarFiltro(new Filtro("Favoritos", noLeido)),
-    ).toThrow(expect.objectContaining({ name: "FILTRO_DUPLICADO" }));
-  });
-
-  test("Se podrá eliminar un filtro y liberar su lugar.", () => {
-    const registro = new RegistroFiltros();
-    for (let i = 1; i <= 5; i++) {
-      registro.agregarFiltro(new Filtro("Filtro " + i, noLeido));
-    }
-
+    // Al eliminar uno se libera un lugar
     registro.eliminarFiltro("Filtro 1");
     registro.agregarFiltro(new Filtro("Nuevo", esFavorito));
-
     expect(registro.buscarFiltro("Filtro 1")).toBeNull();
     expect(registro.buscarFiltro("Nuevo")).not.toBeNull();
     expect(() => registro.eliminarFiltro("No existe")).toThrow(
       expect.objectContaining({ name: "FILTRO_INEXISTENTE" }),
     );
-    expect(() => registro.aplicarFiltro("No existe", correos)).toThrow(
-      expect.objectContaining({ name: "FILTRO_INEXISTENTE" }),
+
+    // No se pueden repetir nombres
+    registro.eliminarFiltro("Filtro 2");
+    expect(() => registro.agregarFiltro(new Filtro("Nuevo", noLeido))).toThrow(
+      expect.objectContaining({ name: "FILTRO_DUPLICADO" }),
     );
   });
 
-  test("La colección de filtros no deberá exponer modificaciones externas.", () => {
+  test("Los cambios en los correos deberán reflejarse en los resultados de los filtros sin necesidad de almacenar nuevamente los mensajes.", () => {
+    const correo = crearCorreo("Aviso", ana, false, false);
+    const lista = [correo];
+    const filtro = new Filtro("No leídos", noLeido);
+    expect(filtro.aplicar(lista)).toEqual([correo]);
+
+    correo.setLeido(true);
+    expect(filtro.aplicar(lista)).toEqual([]);
+
+    correo.setLeido(false);
+    expect(filtro.aplicar(lista)).toEqual([correo]);
+  });
+
+  test("Se deberá verificar que un filtro pueda reutilizarse en diferentes consultas.", () => {
+    const filtro = new Filtro("De Ana", deRemitente("ana@gmail.com"));
+    const otraLista = [
+      crearCorreo("Uno", ana, true, false),
+      crearCorreo("Dos", luis, true, false),
+    ];
+
+    expect(filtro.aplicar(correos)).toEqual([parcial, reunion]);
+    expect(filtro.aplicar(otraLista)).toEqual([otraLista[0]]);
+    expect(filtro.aplicar(correos)).toEqual([parcial, reunion]);
+
+    // Aplicar no modifica la lista original
+    expect(correos).toEqual([parcial, reunion, sprints]);
+
+    // Registrado una vez, se aplica por nombre las veces que haga falta
     const registro = new RegistroFiltros();
-    registro.agregarFiltro(new Filtro("Favoritos", esFavorito));
-
-    registro.getFiltros().push(new Filtro("Intruso", noLeido));
-
-    expect(registro.getFiltros()).toHaveLength(1);
+    registro.agregarFiltro(filtro);
+    expect(registro.aplicarFiltro("De Ana", correos)).toEqual([parcial, reunion]);
+    expect(registro.aplicarFiltro("De Ana", otraLista)).toEqual([otraLista[0]]);
+    expect(() => registro.aplicarFiltro("No existe", correos)).toThrow(
+      expect.objectContaining({ name: "FILTRO_INEXISTENTE" }),
+    );
   });
 });

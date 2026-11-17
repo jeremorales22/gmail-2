@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { ClienteCorreo } from "../src/Clases/ClienteCorreo";
 import { Contacto } from "../src/Clases/Contacto";
 import { Correo } from "../src/Clases/Correo";
+import { and, conTexto, Filtro, noLeido } from "../src/Clases/Filtros";
 
 function crearCorreo(asunto: string): Correo {
   const correo = new Correo();
@@ -13,39 +14,30 @@ function crearCorreo(asunto: string): Correo {
 }
 
 describe("RQ-9", () => {
-  test("Un correo nuevo no deberá ser favorito.", () => {
+  test("Un correo podrá marcarse o desmarcarse como favorito.", () => {
     const cliente = new ClienteCorreo();
     const correo = crearCorreo("Parcial");
     cliente.enviar(correo);
-
     expect(correo.getFavorito()).toBe(false);
-    expect(cliente.obtenerFavoritos()).toEqual([]);
-  });
-
-  test("Se podrá marcar un correo como favorito.", () => {
-    const cliente = new ClienteCorreo();
-    const correo = crearCorreo("Parcial");
-    cliente.enviar(correo);
 
     cliente.marcarComoFavorito(correo.getId());
-
     expect(correo.getFavorito()).toBe(true);
     expect(cliente.obtenerFavoritos()).toEqual([correo]);
-  });
-
-  test("Se podrá desmarcar un correo favorito.", () => {
-    const cliente = new ClienteCorreo();
-    const correo = crearCorreo("Parcial");
-    cliente.enviar(correo);
-    cliente.marcarComoFavorito(correo.getId());
 
     cliente.desmarcarFavorito(correo.getId());
-
     expect(correo.getFavorito()).toBe(false);
     expect(cliente.obtenerFavoritos()).toEqual([]);
+
+    // No se puede marcar ni desmarcar un correo que no existe
+    expect(() => cliente.marcarComoFavorito("id-inexistente")).toThrow(
+      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
+    );
+    expect(() => cliente.desmarcarFavorito("id-inexistente")).toThrow(
+      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
+    );
   });
 
-  test("La vista de favoritos deberá mostrar solo los correos marcados.", () => {
+  test("Se podrán consultar todos los correos favoritos.", () => {
     const cliente = new ClienteCorreo();
     const parcial = crearCorreo("Parcial");
     const reunion = crearCorreo("Reunión");
@@ -53,26 +45,52 @@ describe("RQ-9", () => {
     cliente.enviar(parcial);
     cliente.enviar(reunion);
     cliente.enviar(sprints);
+    const borrador = cliente.crearBorrador();
 
     cliente.marcarComoFavorito(parcial.getId());
     cliente.marcarComoFavorito(sprints.getId());
-
-    const favoritos = cliente.obtenerFavoritos();
-    expect(favoritos).toHaveLength(2);
-    expect(favoritos).toContain(parcial);
-    expect(favoritos).toContain(sprints);
-  });
-
-  test("La vista de favoritos deberá incluir borradores.", () => {
-    const cliente = new ClienteCorreo();
-    const borrador = cliente.crearBorrador();
-
     cliente.marcarComoFavorito(borrador.getId());
 
-    expect(cliente.obtenerFavoritos()).toEqual([borrador]);
+    const favoritos = cliente.obtenerFavoritos();
+    expect(favoritos).toHaveLength(3);
+    expect(favoritos).toContain(parcial);
+    expect(favoritos).toContain(sprints);
+    expect(favoritos).toContain(borrador);
+    expect(favoritos).not.toContain(reunion);
   });
 
-  test("Marcar dos veces un favorito no deberá duplicarlo en la vista.", () => {
+  test("Se podrán combinar filtros para buscar dentro de la colección de favoritos.", () => {
+    const cliente = new ClienteCorreo();
+    const proyecto = crearCorreo("Proyecto");
+    const proyectoLeido = crearCorreo("Proyecto viejo");
+    const parcial = crearCorreo("Parcial");
+    const proyectoNoFavorito = crearCorreo("Proyecto nuevo");
+    [proyecto, proyectoLeido, parcial, proyectoNoFavorito].forEach((c) => cliente.enviar(c));
+    [proyecto, proyectoLeido, parcial].forEach((c) => cliente.marcarComoFavorito(c.getId()));
+    cliente.marcarComoLeido(proyectoLeido.getId());
+
+    const filtro = new Filtro("Proyectos sin leer", and(conTexto("proyecto"), noLeido));
+
+    expect(filtro.aplicar(cliente.obtenerFavoritos())).toEqual([proyecto]);
+  });
+
+  test("Marcar un correo como favorito no deberá moverlo de su bandeja original.", () => {
+    const cliente = new ClienteCorreo();
+    const enviado = crearCorreo("Parcial");
+    cliente.enviar(enviado);
+    const borrador = cliente.crearBorrador();
+
+    cliente.marcarComoFavorito(enviado.getId());
+    cliente.marcarComoFavorito(borrador.getId());
+
+    expect(cliente.getEnviados().contiene(enviado)).toBe(true);
+    expect(cliente.getEnviados().getCorreos()).toHaveLength(1);
+    expect(cliente.getBorradores().contiene(borrador)).toBe(true);
+    expect(cliente.getBorradores().contiene(enviado)).toBe(false);
+    expect(cliente.getPapelera().getCorreos()).toEqual([]);
+  });
+
+  test("No deberán existir duplicados al consultar favoritos.", () => {
     const cliente = new ClienteCorreo();
     const correo = crearCorreo("Parcial");
     cliente.enviar(correo);
@@ -81,29 +99,23 @@ describe("RQ-9", () => {
     cliente.marcarComoFavorito(correo.getId());
 
     expect(cliente.obtenerFavoritos()).toEqual([correo]);
+    expect(cliente.obtenerFavoritos()).toEqual([correo]);
   });
 
-  test("Un favorito eliminado no deberá aparecer en la vista y volverá al restaurarlo.", () => {
+  test("Los correos eliminados permanecerán en Eliminados y no aparecerán en la vista habitual de favoritos hasta su restauración, conservando su indicador de favorito.", () => {
     const cliente = new ClienteCorreo();
     const correo = crearCorreo("Parcial");
     cliente.enviar(correo);
     cliente.marcarComoFavorito(correo.getId());
 
     cliente.eliminar(correo, cliente.getEnviados());
+    expect(cliente.getPapelera().contiene(correo)).toBe(true);
     expect(cliente.obtenerFavoritos()).toEqual([]);
+    expect(correo.getFavorito()).toBe(true);
 
     cliente.restaurar(correo);
+    expect(cliente.getEnviados().contiene(correo)).toBe(true);
     expect(cliente.obtenerFavoritos()).toEqual([correo]);
-  });
-
-  test("No se podrá marcar ni desmarcar un correo que no existe.", () => {
-    const cliente = new ClienteCorreo();
-
-    expect(() => cliente.marcarComoFavorito("id-inexistente")).toThrow(
-      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
-    );
-    expect(() => cliente.desmarcarFavorito("id-inexistente")).toThrow(
-      expect.objectContaining({ name: "CORREO_NO_ENCONTRADO" }),
-    );
+    expect(correo.getFavorito()).toBe(true);
   });
 });

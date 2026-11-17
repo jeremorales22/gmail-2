@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { Contacto } from "../src/Clases/Contacto";
+import { Bandeja } from "../src/Clases/Bandeja";
 import { Correo } from "../src/Clases/Correo";
 import {
   asuntosNoLeidos,
@@ -43,18 +44,28 @@ const sprints = crearCorreo("Sprints", luis, [ana], false, false);
 const correos = [parcial, reunion, sprints];
 
 describe("RQ-10", () => {
-  test("Se podrá transformar una colección de correos con map.", () => {
-    expect(obtenerAsuntos(correos)).toEqual(["Parcial", "Reunión", "Sprints"]);
-    expect(obtenerRemitentes(correos)).toEqual([
+  test("Obtener la lista de asuntos de una bandeja mediante map.", () => {
+    const bandeja = new Bandeja();
+    correos.forEach((correo) => bandeja.agregarCorreo(correo));
+
+    expect(obtenerAsuntos(bandeja.getCorreos())).toEqual([
+      "Parcial",
+      "Reunión",
+      "Sprints",
+    ]);
+    expect(obtenerRemitentes(bandeja.getCorreos())).toEqual([
       "ana@gmail.com",
       "ana@gmail.com",
       "luis@gmail.com",
     ]);
   });
 
-  test("Se podrá seleccionar una parte de los correos con filter.", () => {
-    expect(filtrarPor(esFavorito)(correos)).toEqual([parcial]);
-    expect(filtrarPor(deRemitente("ana@gmail.com"))(correos)).toEqual([
+  test("Obtener los correos que cumplan una condición utilizando filter.", () => {
+    const bandeja = new Bandeja();
+    correos.forEach((correo) => bandeja.agregarCorreo(correo));
+
+    expect(filtrarPor(esFavorito)(bandeja.getCorreos())).toEqual([parcial]);
+    expect(filtrarPor(deRemitente("ana@gmail.com"))(bandeja.getCorreos())).toEqual([
       parcial,
       reunion,
     ]);
